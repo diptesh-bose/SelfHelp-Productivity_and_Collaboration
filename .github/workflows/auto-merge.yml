@@ -1,0 +1,30 @@
+name: Auto Merge PR After Review
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.review.state == 'approved'
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      
+      - name: Auto-merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "PR #$PR_NUMBER has been approved"
+          
+          # Enable auto-merge for the PR
+          gh pr merge $PR_NUMBER --auto --squash
+          
+          echo "Auto-merge enabled for PR #$PR_NUMBER"
