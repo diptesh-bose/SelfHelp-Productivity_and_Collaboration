@@ -1,6 +1,6 @@
 # Auto-Approve PR Workflow
 
-This workflow automatically approves pull requests after they have been reviewed by at least one reviewer.
+This workflow automatically approves pull requests after they have been reviewed and approved by at least one human reviewer.
 
 ## How it works
 
@@ -9,8 +9,9 @@ This workflow automatically approves pull requests after they have been reviewed
    - A pull request is opened, synchronized, or reopened
 
 2. **Process**:
-   - Checks if the PR has at least one approved review
-   - If approved reviews exist, the GitHub Actions bot will automatically approve the PR
+   - Checks if the PR has at least one approved review from a human reviewer
+   - Excludes the bot's own approvals to ensure genuine human review
+   - If human approved reviews exist, the GitHub Actions bot will automatically approve the PR
    - Prevents duplicate approvals by checking if the bot has already approved
 
 3. **Permissions**: The workflow requires:
@@ -25,7 +26,7 @@ Location: `.github/workflows/auto-approve-pr.yml`
 
 Once this workflow is merged into the main branch:
 1. Any incoming PR will be monitored
-2. When a reviewer approves the PR, the workflow will run
+2. When a human reviewer approves the PR, the workflow will run
 3. The GitHub Actions bot will add its approval automatically
 4. The PR will have an additional approval from the bot
 
