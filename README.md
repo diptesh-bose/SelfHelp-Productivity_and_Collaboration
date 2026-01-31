@@ -1,2 +1,2 @@
 New readme
-Validating auto PR approvals
+Validating auto PR approvals.
