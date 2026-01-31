@@ -1,0 +1,62 @@
+name: Auto Approve PR
+
+on:
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Check reviews and auto-approve
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            // Filter out bot's own approvals to ensure human review is required
+            const humanApprovals = reviews.filter(review =>
+              review.state === 'APPROVED' &&
+              review.user.login !== 'github-actions[bot]'
+            );
+
+            console.log(`Total reviews: ${reviews.length}`);
+            console.log(`Human approved reviews: ${humanApprovals.length}`);
+
+            // Only proceed if there's at least one human approval
+            if (humanApprovals.length === 0) {
+              console.log('No human approvals found, skipping auto-approval');
+              return;
+            }
+
+            // Check if bot has already approved
+            const botApproval = reviews.find(review =>
+              review.user.login === 'github-actions[bot]' &&
+              review.state === 'APPROVED'
+            );
+
+            if (botApproval) {
+              console.log('PR already approved by bot');
+              return;
+            }
+
+            // Submit approval
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              event: 'APPROVE',
+              body: 'Auto-approved after review ✓'
+            });
+
+            console.log('PR approved successfully');
