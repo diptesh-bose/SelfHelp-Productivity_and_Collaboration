@@ -14,9 +14,6 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
       - name: Auto-merge PR
         env:
           GH_TOKEN: ${{ github.token }}
@@ -25,6 +22,6 @@ jobs:
           echo "PR #$PR_NUMBER has been approved"
 
           # Enable auto-merge for the PR
-          gh pr merge $PR_NUMBER --auto --squash
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }}
 
           echo "Auto-merge enabled for PR #$PR_NUMBER"
