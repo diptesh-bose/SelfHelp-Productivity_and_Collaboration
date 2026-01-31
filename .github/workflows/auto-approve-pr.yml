@@ -1,0 +1,69 @@
+name: Auto Approve PR
+
+on:
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Check if PR has been reviewed
+        id: check-reviews
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            const approvedReviews = reviews.filter(review =>
+              review.state === 'APPROVED');
+            const hasApprovals = approvedReviews.length > 0;
+
+            console.log(`Total reviews: ${reviews.length}`);
+            console.log(`Approved reviews: ${approvedReviews.length}`);
+
+            core.setOutput('has_approvals', hasApprovals);
+            return hasApprovals;
+
+      - name: Auto approve PR
+        if: steps.check-reviews.outputs.has_approvals == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            // Check if bot has already approved
+            const botApproval = reviews.find(review =>
+              review.user.login === 'github-actions[bot]' &&
+              review.state === 'APPROVED'
+            );
+
+            if (botApproval) {
+              console.log('PR already approved by bot');
+              return;
+            }
+
+            // Submit approval
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              event: 'APPROVE',
+              body: 'Auto-approved after review ✓'
+            });
+
+            console.log('PR approved successfully');
